@@ -1,0 +1,23 @@
+:root{
+  --accent:#2b83ba;
+  --accent-2:#66b6e6;
+  --panel-bg: #ffffffcc;
+}
+html, body { height: 100%; background: linear-gradient(120deg,#f6fbff 0%, #e8f4fb 50%, #f9fcff 100%); }
+.left-panel { min-height: 100vh; }
+.card-panel {
+  background: var(--panel-bg);
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(20,40,60,0.06);
+  padding: 24px;
+}
+.form-control:focus { box-shadow: 0 0 0 0.2rem rgba(43,131,186,0.18); border-color: var(--accent); }
+.btn-primary { background: linear-gradient(90deg,var(--accent),var(--accent-2)); border: none; }
+.btn-outline-secondary { border-radius: 8px; }
+#mapDiv { width: 100%; height: calc(100vh - 110px); min-height: 420px; border-radius: 10px; }
+.summary { transition: transform .28s ease, opacity .28s ease; transform-origin: top; }
+.summary.hidden { transform: translateY(-6px) scaleY(.98); opacity:0; height:0; overflow:hidden; }
+.summary.visible { transform: none; opacity:1; }
+.small-muted { color: #6c757d; font-size: .9rem; }
+.logo { display:inline-flex; align-items:center; gap:8px; }
+.logo .bi { font-size: 1.4rem; color: var(--accent); }
