@@ -5,87 +5,183 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<title>Itinerario y Mapa de Colombia</title>
 		<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+		<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
 		<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
 		<style>
-			html, body { height: 100%; }
-			#mapDiv { width: 100%; height: 80vh; min-height: 400px; }
+			:root{
+				--accent:#2b83ba;
+				--accent-2:#66b6e6;
+				--panel-bg: #ffffffcc;
+			}
+			html, body { height: 100%; background: linear-gradient(120deg,#f6fbff 0%, #e8f4fb 50%, #f9fcff 100%); }
+			.left-panel { min-height: 100vh; }
+			.card-panel {
+				background: var(--panel-bg);
+				border-radius: 12px;
+				box-shadow: 0 6px 18px rgba(20,40,60,0.06);
+				padding: 24px;
+			}
+			.form-control:focus { box-shadow: 0 0 0 0.2rem rgba(43,131,186,0.18); border-color: var(--accent); }
+			.btn-primary { background: linear-gradient(90deg,var(--accent),var(--accent-2)); border: none; }
+			.btn-outline-secondary { border-radius: 8px; }
+			#mapDiv { width: 100%; height: calc(100vh - 110px); min-height: 420px; border-radius: 10px; }
+			.summary { transition: transform .28s ease, opacity .28s ease; transform-origin: top; }
+			.summary.hidden { transform: translateY(-6px) scaleY(.98); opacity:0; height:0; overflow:hidden; }
+			.summary.visible { transform: none; opacity:1; }
+			.small-muted { color: #6c757d; font-size: .9rem; }
+			.logo { display:inline-flex; align-items:center; gap:8px; }
+			.logo .bi { font-size: 1.4rem; color: var(--accent); }
 		</style>
 	</head>
 	<body>
 		<div class="container-fluid">
-			<div class="row vh-100">
-				<div class="col-md-4 border-end p-4 bg-light">
-					<h4 class="mb-3">Crear Itinerario</h4>
-					<form id="itineraryForm">
-						<div class="mb-3">
-							<label for="aeropuertoSalida" class="form-label">Aeropuerto de salida</label>
-							<input type="text" class="form-control" id="aeropuertoSalida" placeholder="Ej: El Dorado (BOG)" required>
+			<div class="row gx-0">
+				<div class="col-lg-4 left-panel d-flex align-items-start justify-content-center p-4">
+					<div class="card-panel w-100">
+						<div class="d-flex justify-content-between align-items-start mb-3">
+							<div>
+								<div class="logo"><i class="bi bi-airplane-fill"></i><h4 class="m-0">Crear Itinerario</h4></div>
+								<div class="small-muted">Rellena los datos y vista previa en vivo</div>
+							</div>
+							<button id="resetBtn" class="btn btn-sm btn-outline-secondary" title="Limpiar formulario"><i class="bi bi-arrow-clockwise"></i></button>
 						</div>
-						<div class="mb-3">
-							<label for="aeropuertoLlegada" class="form-label">Aeropuerto de llegada</label>
-							<input type="text" class="form-control" id="aeropuertoLlegada" placeholder="Ej: José María Córdova (MDE)" required>
-						</div>
-						<div class="mb-3">
-							<label for="intensidadHoraria" class="form-label">Intensidad horaria (horas)</label>
-							<input type="number" class="form-control" id="intensidadHoraria" min="1" max="24" value="1" required>
-						</div>
-						<button type="submit" class="btn btn-primary">Crear itinerario</button>
-					</form>
 
-					<div id="itinerarySummary" class="mt-4" style="display:none;">
-						<h5>Resumen</h5>
-						<ul class="list-group">
-							<li class="list-group-item"><strong>Salida:</strong> <span id="sumSalida"></span></li>
-							<li class="list-group-item"><strong>Llegada:</strong> <span id="sumLlegada"></span></li>
-							<li class="list-group-item"><strong>Intensidad:</strong> <span id="sumIntensidad"></span> horas</li>
-						</ul>
+						<form id="itineraryForm">
+							<div class="mb-3">
+								<label for="aeropuertoSalida" class="form-label">Aeropuerto de salida</label>
+								<input type="text" class="form-control" id="aeropuertoSalida" placeholder="Ej: El Dorado (BOG)" required>
+							</div>
+							<div class="mb-3">
+								<label for="aeropuertoLlegada" class="form-label">Aeropuerto de llegada</label>
+								<input type="text" class="form-control" id="aeropuertoLlegada" placeholder="Ej: José María Córdova (MDE)" required>
+							</div>
+							<div class="mb-3">
+								<label for="intensidadHoraria" class="form-label">Intensidad horaria (horas)</label>
+								<input type="number" class="form-control" id="intensidadHoraria" min="1" max="24" value="1" required>
+							</div>
+
+							<div class="d-flex gap-2">
+								<button type="submit" class="btn btn-primary flex-grow-1">Crear itinerario</button>
+								<button type="button" id="previewMapBtn" class="btn btn-outline-secondary" title="Recentrar mapa">Mostrar mapa</button>
+							</div>
+						</form>
+
+						<div id="itinerarySummary" class="mt-4 summary hidden" aria-hidden="true">
+							<h5 class="mb-2">Resumen</h5>
+							<ul class="list-group shadow-sm">
+								<li class="list-group-item d-flex justify-content-between"><span><strong>Salida</strong></span><span id="sumSalida">-</span></li>
+								<li class="list-group-item d-flex justify-content-between"><span><strong>Llegada</strong></span><span id="sumLlegada">-</span></li>
+								<li class="list-group-item d-flex justify-content-between"><span><strong>Intensidad</strong></span><span id="sumIntensidad">1</span></li>
+							</ul>
+						</div>
 					</div>
 				</div>
 
-				<div class="col-md-8 p-3">
-					<h4 class="mb-3">Mapa de Colombia</h4>
+				<div class="col-lg-8 p-4">
+					<div class="d-flex align-items-center justify-content-between mb-3">
+						<h4 class="m-0">Mapa de Colombia</h4>
+						<div class="small-muted">Interactivo — usa zoom y arrastra</div>
+					</div>
 					<div id="mapDiv" class="border"></div>
 				</div>
 			</div>
 		</div>
 
+		<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 		<script>
 			document.addEventListener('DOMContentLoaded', function () {
-				// Render a choropleth that highlights Colombia using ISO-3 code
-				var data = [{
+				// Basic choropleth to highlight Colombia and a small marker for Bogotá
+				var choropleth = {
 					type: 'choropleth',
 					locations: ['COL'],
 					locationmode: 'ISO-3',
 					z: [1],
-					colorscale: [[0, '#cfe9f7'], [1, '#2b83ba']],
+					colorscale: [[0, '#e6f2fb'], [1, '#2b83ba']],
 					showscale: false,
-					marker: {line:{color:'rgb(180,180,180)',width:0.5}}
-				}];
+					marker: {line:{color:'rgba(0,0,0,0.12)',width:0.6}}
+				};
+
+				var marker = {
+					type: 'scattergeo',
+					lon: [-74.0721], // Bogotá approx lon
+					lat: [4.7110],   // Bogotá approx lat
+					mode: 'markers+text',
+					text: ['Bogotá'],
+					textposition: 'top center',
+					marker: {size: 10, color: '#ff6b6b', line: {width:1, color:'#fff'}}
+				};
+
+				var data = [choropleth, marker];
 
 				var layout = {
 					margin: {t:0,b:0,l:0,r:0},
 					geo: {
 						scope: 'south america',
 						projection: {type: 'mercator'},
+						bgcolor: 'rgba(0,0,0,0)',
+						showland: true,
+						landcolor: '#f8f9fa',
 						showcountries: true,
-						countrycolor: 'rgba(0,0,0,0.2)'
+						countrywidth: 0.5,
+						lonaxis: {range: [-82, -67]},
+						lataxis: {range: [-5, 13]}
 					}
 				};
 
 				Plotly.newPlot('mapDiv', data, layout, {responsive: true});
 
-				// Form handling: display summary
+				// Elements
 				var form = document.getElementById('itineraryForm');
+				var salidaInput = document.getElementById('aeropuertoSalida');
+				var llegadaInput = document.getElementById('aeropuertoLlegada');
+				var intensidadInput = document.getElementById('intensidadHoraria');
+				var summary = document.getElementById('itinerarySummary');
+				var sumSalida = document.getElementById('sumSalida');
+				var sumLlegada = document.getElementById('sumLlegada');
+				var sumIntensidad = document.getElementById('sumIntensidad');
+				var resetBtn = document.getElementById('resetBtn');
+				var previewMapBtn = document.getElementById('previewMapBtn');
+
+				function showSummary(){
+					sumSalida.textContent = salidaInput.value.trim() || '-';
+					sumLlegada.textContent = llegadaInput.value.trim() || '-';
+					sumIntensidad.textContent = intensidadInput.value || '1';
+					summary.classList.remove('hidden');
+					summary.classList.add('visible');
+					summary.setAttribute('aria-hidden', 'false');
+				}
+
+				// Live preview while typing
+				[salidaInput, llegadaInput, intensidadInput].forEach(function(el){
+					el.addEventListener('input', function(){
+						showSummary();
+					});
+				});
+
+				// Submit handler (keeps behavior but adds subtle feedback)
 				form.addEventListener('submit', function (e) {
 					e.preventDefault();
-					var salida = document.getElementById('aeropuertoSalida').value.trim();
-					var llegada = document.getElementById('aeropuertoLlegada').value.trim();
-					var intensidad = document.getElementById('intensidadHoraria').value;
+					showSummary();
+					// small pulse effect on summary
+					summary.animate([{ transform: 'scaleY(0.98)', opacity: 0.9 }, { transform: 'scaleY(1)', opacity:1 }], {duration:300, easing:'ease-out'});
+				});
 
-					document.getElementById('sumSalida').textContent = salida;
-					document.getElementById('sumLlegada').textContent = llegada;
-					document.getElementById('sumIntensidad').textContent = intensidad;
-					document.getElementById('itinerarySummary').style.display = 'block';
+				// Reset form
+				resetBtn.addEventListener('click', function(){
+					form.reset();
+					sumSalida.textContent = '-';
+					sumLlegada.textContent = '-';
+					sumIntensidad.textContent = '1';
+					summary.classList.remove('visible');
+					summary.classList.add('hidden');
+				});
+
+				// Recenter map to Colombia on demand
+				previewMapBtn.addEventListener('click', function(){
+					Plotly.relayout('mapDiv', {
+						'geo.lonaxis.range': [-82, -67],
+						'geo.lataxis.range': [-5, 13]
+					});
 				});
 			});
 		</script>
